@@ -1,5 +1,8 @@
 package dk.cphbusiness.upload;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
 
 public class DatabaseController implements Controller {
   private String username = "aka";
@@ -40,24 +44,33 @@ public class DatabaseController implements Controller {
     }
 
   @Override
-  public Picture load(String name) {
+  public void load(String name, HttpServletResponse response) {
     try (Connection connection = DriverManager.getConnection(url, username, password)) {
       String sql = "SELECT * FROM PICTURES WHERE NAME = ?";
       PreparedStatement statement = connection.prepareStatement(sql);
+      statement.setString(1, name);
       try (ResultSet results = statement.executeQuery()) {
         if (results.next()) {
-          return new Picture(
-              name,
-              results.getString("TYPE"),
-              results.getBlob("DATA").getBinaryStream()
-              );
+              response.setContentType(results.getString("TYPE"));
+              try (OutputStream out = response.getOutputStream()) {
+                try (InputStream in = results.getBinaryStream("DATA")) {
+                  byte[] buffer = new byte[1024];
+                  int count = 0;
+                  do {
+                    count = in.read(buffer);
+                    out.write(buffer, 0, count);
+                    }
+                  while (count == 1024);
+                  }
+                } 
+              catch (IOException ex) {
+                Logger.getLogger(DatabaseController.class.getName()).log(Level.SEVERE, null, ex);
+              }
           }
-        return null;
         }
       }
     catch (SQLException ex) {
       Logger.getLogger(DatabaseController.class.getName()).log(Level.SEVERE, null, ex);
-      return null;
       }
     }
   

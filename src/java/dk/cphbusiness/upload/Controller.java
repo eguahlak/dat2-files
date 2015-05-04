@@ -1,6 +1,8 @@
 package dk.cphbusiness.upload;
 
+import javax.servlet.http.HttpServletResponse;
+
 public interface Controller {
   void save(Picture picture);
-  Picture load(String name);
+  void load(String name, HttpServletResponse response);
   }
