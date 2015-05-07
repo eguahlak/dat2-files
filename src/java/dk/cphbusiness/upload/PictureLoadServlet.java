@@ -1,8 +1,6 @@
 package dk.cphbusiness.upload;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.annotation.MultipartConfig;
@@ -19,13 +17,9 @@ public class PictureLoadServlet extends HttpServlet {
     Controller controller = new DatabaseController();
     
     String name = request.getParameter("name");
-    controller.load(name, response);
-    
-    
-    
-    // ---
-    
-   
+    Picture picture = controller.load(name);
+    response.setContentType(picture.getType());
+    response.getOutputStream().write(picture.getData());
     
     }  
   

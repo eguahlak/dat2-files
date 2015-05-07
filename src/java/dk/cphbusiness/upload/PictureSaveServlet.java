@@ -22,7 +22,8 @@ public class PictureSaveServlet extends HttpServlet {
     Part part = request.getPart("file");
     String name = part.getSubmittedFileName();
     String type = part.getHeader("content-type");
-    InputStream data = part.getInputStream();
+    byte[] data = new byte[(int)part.getSize()];
+    part.getInputStream().read(data);
     
     Picture picture = new Picture(name, type, data);
     controller.save(picture);

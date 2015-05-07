@@ -33,9 +33,11 @@ public class DatabaseController implements Controller {
     try (Connection connection = DriverManager.getConnection(url, username, password)) {
       String sql = "INSERT INTO PICTURES (NAME, TYPE, DATA) VALUES (?, ?, ?)";
       PreparedStatement statement = connection.prepareStatement(sql);
+      Blob blob = connection.createBlob();
+      blob.setBytes(1, picture.getData());
       statement.setString(1, picture.getName());
       statement.setString(2, picture.getType());
-      statement.setBlob(3, picture.getData());
+      statement.setBlob(3, blob);
       statement.executeUpdate();
       }
     catch (SQLException ex) {
@@ -44,34 +46,28 @@ public class DatabaseController implements Controller {
     }
 
   @Override
-  public void load(String name, HttpServletResponse response) {
+  public Picture load(String name) {
     try (Connection connection = DriverManager.getConnection(url, username, password)) {
       String sql = "SELECT * FROM PICTURES WHERE NAME = ?";
       PreparedStatement statement = connection.prepareStatement(sql);
       statement.setString(1, name);
       try (ResultSet results = statement.executeQuery()) {
         if (results.next()) {
-              response.setContentType(results.getString("TYPE"));
-              try (OutputStream out = response.getOutputStream()) {
-                try (InputStream in = results.getBinaryStream("DATA")) {
-                  byte[] buffer = new byte[1024];
-                  int count = 0;
-                  do {
-                    count = in.read(buffer);
-                    out.write(buffer, 0, count);
-                    }
-                  while (count == 1024);
-                  }
-                } 
-              catch (IOException ex) {
-                Logger.getLogger(DatabaseController.class.getName()).log(Level.SEVERE, null, ex);
-              }
+          Blob blob = results.getBlob("DATA");
+          System.out.println("#"+blob.length());
+          byte[] data = blob.getBytes(1, (int)blob.length()); 
+          return new Picture(
+              name,
+              results.getString("TYPE"),
+              data
+              );
           }
         }
       }
     catch (SQLException ex) {
       Logger.getLogger(DatabaseController.class.getName()).log(Level.SEVERE, null, ex);
       }
+    return null;
     }
   
   }
